@@ -13,6 +13,7 @@ class ProgramController extends Controller
     {
         // show programs for the same department as the selected period
         $programs = Program::where('academic_period_id', $period->id)
+            ->withCount('courses')
             ->orderBy('name')
             ->get();
 
@@ -34,7 +35,7 @@ class ProgramController extends Controller
         return back()->with('status', 'Program created.');
     }
 
-    public function destroy(Program $program)
+    public function destroy(AcademicPeriod $period, Program $program)
     {
         $program->delete();
         return back()->with('status', 'Program deleted.');

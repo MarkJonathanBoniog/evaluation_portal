@@ -49,6 +49,10 @@ Route::middleware(['auth','role:chairman|ced'])
         ->name('courses.store');
     Route::delete('periods/{period}/programs/{program}/courses/{course}', [CourseController::class,'destroy'])
         ->name('courses.destroy');
+    Route::get('periods/{period}/programs/{program}/courses/export', [CourseController::class,'export'])
+        ->name('courses.export');
+    Route::post('periods/{period}/programs/{program}/courses/import', [CourseController::class,'import'])
+        ->name('courses.import');
 
     // 4) Sections (scoped by Period + Program + Course)
     Route::get('periods/{period}/programs/{program}/courses/{course}/sections', [SectionController::class,'index'])
@@ -57,15 +61,27 @@ Route::middleware(['auth','role:chairman|ced'])
         ->name('sections.store');
     Route::delete('periods/{period}/programs/{program}/courses/{course}/sections/{section}', [SectionController::class,'destroy'])
         ->name('sections.destroy');
+    Route::get('periods/{period}/programs/{program}/courses/{course}/sections/download-template',
+    [SectionController::class, 'downloadTemplate'])
+        ->name('sections.download-template');
+    Route::post('periods/{period}/programs/{program}/courses/{course}/sections/upload-csv',
+    [SectionController::class, 'uploadCsv'])
+        ->name('sections.upload-csv');
 
     // 5) Roster (students under a Section) — keep full chain for breadcrumbs/redirects
-    Route::get('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster', [RosterController::class, 'index'])
-        ->name('roster.index');
+Route::get('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster', [RosterController::class, 'index'])
+    ->name('roster.index');
 
-    Route::post('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster',
-        [RosterController::class,'store'])->name('roster.store');
+Route::post('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster',
+    [RosterController::class,'store'])->name('roster.store');
 
-    Route::delete('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster/{student}',
-        [RosterController::class,'destroy'])->name('roster.destroy');
+Route::delete('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster/{student}',
+    [RosterController::class,'destroy'])->name('roster.destroy');
 
+// NEW: CSV template download + CSV upload (merge/sync)
+Route::get('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster/download-template',
+    [RosterController::class, 'downloadTemplate'])->name('roster.download-template');
+
+Route::post('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster/upload-csv',
+    [RosterController::class, 'uploadCsv'])->name('roster.upload-csv');
 });

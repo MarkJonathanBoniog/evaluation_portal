@@ -28,18 +28,5 @@ Route::get('/debug', function () {
     ];
 });
 
-Route::get('/_rolecheck', function () {
-    $u = Auth::user();
-    return [
-        'method_exists' => method_exists($u, 'hasRole'),
-        'roles' => $u->getRoleNames()->all(),
-        'is_systemadmin' => $u->hasRole('systemadmin'),
-        'is_ced' => $u->hasRole('ced'),
-        'is_chairman' => $u->hasRole('chairman'),
-        'is_instructor' => $u->hasRole('instructor'),
-        'is_student' => $u->hasRole('student'),
-    ];
-})->middleware('auth');
-
 require __DIR__.'/auth.php';
 require __DIR__.'/main.php';

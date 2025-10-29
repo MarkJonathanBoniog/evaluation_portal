@@ -30,6 +30,7 @@
                     <tr>
                         <th class="py-2">Program</th>
                         <th class="py-2">Major</th>
+                        <th class="py-2 text-center">Number of Courses</th>
                         <th class="py-2">Actions</th>
                     </tr>
                 </thead>
@@ -38,6 +39,7 @@
                         <tr class="text-gray-800 dark:text-gray-100">
                             <td class="py-2">{{ $program->name }}</td>
                             <td class="py-2">{{ $program->major ?: '—' }}</td>
+                            <td class="py-2 text-center">{{ $program->courses_count }}</td>
                             <td class="py-2 text-left">
                                 <a href="{{ route('manage.courses.index', [$period, $program]) }}" class="text-blue-600 hover:underline">
                                     Courses
