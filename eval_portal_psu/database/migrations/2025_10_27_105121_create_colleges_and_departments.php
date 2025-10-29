@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::create('colleges', function (Blueprint $t) {
+            $t->id();
+            $t->string('name')->unique();
+            $t->timestamps();
+        });
+
+        Schema::create('departments', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('college_id')->constrained()->cascadeOnDelete();
+            $t->string('name');
+            $t->timestamps();
+            $t->unique(['college_id','name']);
+        });
+    }
+    public function down(): void {
+        Schema::dropIfExists('departments');
+        Schema::dropIfExists('colleges');
+    }
+};
