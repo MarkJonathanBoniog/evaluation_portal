@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\College;
 use App\Models\Department;
@@ -12,152 +14,276 @@ use App\Models\AcademicPeriod;
 use App\Models\StudentProfile;
 use App\Models\InstructorProfile;
 use App\Models\ChairmanAssignment;
+use App\Models\DeanAssignment;
 use App\Models\CedAssignment;
-use Illuminate\Support\Str;
+use App\Models\Section;
 
 class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // ---------------------------
-        // 1. Core users with roles
-        // ---------------------------
+        // -----------------------------------
+        // 0. Base structure configuration
+        // -----------------------------------
+        $structure = [
+            'College of Computing' => [
+                'code' => 'COC',
+                'departments' => [
+                    'Information Technology',
+                    'Mathematics',
+                ],
+            ],
+            'College of Arts and Education' => [
+                'code' => 'CAE',
+                'departments' => [
+                    'English and Literature',
+                    'Social Sciences',
+                    'Teacher Education',
+                ],
+            ],
+            'College of Engineering' => [
+                'code' => 'COE',
+                'departments' => [
+                    'Civil Engineering',
+                    'Electrical Engineering',
+                    'Mechanical Engineering',
+                    'Computer Engineering',
+                    'Industrial Engineering',
+                ],
+            ],
+        ];
+
+        // -----------------------------------
+        // 1. System admin + CED user
+        // -----------------------------------
         $sys = User::factory()->create([
-            'name' => 'Sys Admin',
-            'email' => 'sys@example.com',
+            'name'     => 'System Administrator',
+            'email'    => 'sysadmin@example.com',
             'password' => bcrypt('password'),
         ]);
         $sys->assignRole('systemadmin');
 
-        $ced = User::factory()->create([
-            'name' => 'CED Admin',
-            'email' => 'ced@example.com',
+        $cedUser = User::factory()->create([
+            'name'     => 'CED Administrator',
+            'email'    => 'ced@example.com',
             'password' => bcrypt('password'),
         ]);
-        $ced->assignRole('ced');
+        // Base role: instructor + high-level role
+        $cedUser->assignRole(['instructor', 'ced']);
 
-        $dean = User::factory()->create([
-            'name' => 'Dean IT',
-            'email' => 'dean@example.com',
-            'password' => bcrypt('password'),
+        // Give CED an instructor profile (no specific department)
+        InstructorProfile::create([
+            'user_id'        => $cedUser->id,
+            'instructor_uid' => 'INST-CED',
+            'department_id'  => null,
         ]);
-        $ced->assignRole('ced');
 
-        $chair = User::factory()->create([
-            'name' => 'IT Chairman',
-            'email' => 'chair@example.com',
-            'password' => bcrypt('password'),
-        ]);
-        $chair->assignRole('chairman');
+        // We'll create CedAssignments per college later
+        $deansByCollegeId = [];
+        $instructorsByDepartmentId = []; // dept_id => Collection<User>
+        $chairmenByDepartmentId = [];
+        $academicPeriodsByDepartmentId = [];
 
-        $instructors = collect([
-            ['name' => 'Jane Instructor', 'email' => 'inst@example.com'],
-            ['name' => 'Mark Instructor', 'email' => 'markinst@example.com'],
-            ['name' => 'Rica Instructor', 'email' => 'ricainst@example.com'],
-        ])->map(function ($data) {
-            $u = User::factory()->create([
-                'name' => $data['name'],
-                'email' => $data['email'],
+        $globalInstructorCounter = 1;
+        $globalStudentCounter    = 1;
+        $globalCourseCounter     = 1;
+
+        // -----------------------------------
+        // 2. Colleges, Departments, Deans, Chairmen, Instructors, Periods
+        // -----------------------------------
+        foreach ($structure as $collegeName => $meta) {
+            $college = College::firstOrCreate(['name' => $collegeName]);
+            $collegeCode = $meta['code'];
+
+            // Dean for this college (also instructor)
+            $deanUser = User::factory()->create([
+                'name'     => $collegeCode . ' Dean',
+                'email'    => Str::slug($collegeCode . '-dean') . '@example.com',
                 'password' => bcrypt('password'),
             ]);
-            $u->assignRole('instructor');
-            return $u;
-        });
+            $deanUser->assignRole(['instructor', 'dean']);
 
-        $students = collect([
-            ['name' => 'John Student', 'email' => 'stud@example.com'],
-            ['name' => 'Anna Student', 'email' => 'anna@example.com'],
-            ['name' => 'Leo Student', 'email' => 'leo@example.com'],
-            ['name' => 'Mina Student', 'email' => 'mina@example.com'],
-        ])->map(function ($data) {
-            $u = User::factory()->create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => bcrypt('password'),
+            $deansByCollegeId[$college->id] = $deanUser;
+
+            // Departments under this college
+            $departmentModels = [];
+
+            foreach ($meta['departments'] as $deptName) {
+                $dept = Department::firstOrCreate([
+                    'college_id' => $college->id,
+                    'name'       => $deptName,
+                ]);
+
+                $departmentModels[] = $dept;
+
+                // Chairman for this department (also instructor)
+                $chairUser = User::factory()->create([
+                    'name'     => $deptName . ' Chairman',
+                    'email'    => Str::slug($deptName . '-chair') . '@example.com',
+                    'password' => bcrypt('password'),
+                ]);
+                $chairUser->assignRole(['instructor', 'chairman']);
+
+                // Instructor profile for chairman
+                InstructorProfile::create([
+                    'user_id'        => $chairUser->id,
+                    'instructor_uid' => 'INST-' . str_pad($globalInstructorCounter++, 3, '0', STR_PAD_LEFT),
+                    'department_id'  => $dept->id,
+                ]);
+
+                // Chairman assignment
+                ChairmanAssignment::firstOrCreate([
+                    'user_id'       => $chairUser->id,
+                    'department_id' => $dept->id,
+                ]);
+
+                $chairmenByDepartmentId[$dept->id] = $chairUser;
+
+                // Two regular instructors for this department
+                $instructorsForDept = collect([$chairUser]); // include chairman as instructor
+
+                for ($i = 1; $i <= 2; $i++) {
+                    $instUser = User::factory()->create([
+                        'name'     => $deptName . " Instructor {$i}",
+                        'email'    => Str::slug("{$deptName}-instructor-{$i}") . '@example.com',
+                        'password' => bcrypt('password'),
+                    ]);
+                    $instUser->assignRole('instructor');
+
+                    InstructorProfile::create([
+                        'user_id'        => $instUser->id,
+                        'instructor_uid' => 'INST-' . str_pad($globalInstructorCounter++, 3, '0', STR_PAD_LEFT),
+                        'department_id'  => $dept->id,
+                    ]);
+
+                    $instructorsForDept->push($instUser);
+                }
+
+                $instructorsByDepartmentId[$dept->id] = $instructorsForDept;
+
+                // Academic period 2025-2026 first sem for this department, created by college dean
+                $period = AcademicPeriod::firstOrCreate(
+                    [
+                        'college_id'    => $college->id,
+                        'department_id' => $dept->id,
+                        'year_start'    => 2025,
+                        'year_end'      => 2026,
+                        'term'          => 'first',
+                    ],
+                    [
+                        'created_by' => $deanUser->id,
+                    ]
+                );
+
+                $academicPeriodsByDepartmentId[$dept->id] = $period;
+            }
+
+            // Dean assignment – dean to this college
+            DeanAssignment::firstOrCreate([
+                'user_id'    => $deanUser->id,
+                'college_id' => $college->id,
             ]);
-            $u->assignRole('student');
-            return $u;
-        });
 
-        // ---------------------------
-        // 2. Organization structure
-        // ---------------------------
-        $college = College::firstOrCreate(['name' => 'College of Computing']);
-        $dept = Department::firstOrCreate([
-            'college_id' => $college->id,
-            'name' => 'IT Department',
-        ]);
-
-        // ---------------------------
-        // 3. Academic period
-        // ---------------------------
-        $period = AcademicPeriod::firstOrCreate(
-            [
-                'college_id'    => $college->id,
-                'department_id' => $dept->id,
-                'year_start'    => 2025,
-                'year_end'      => 2026,
-                'term'          => 'first',
-            ],
-            ['created_by' => $chair->id]
-        );
-
-        // ---------------------------
-        // 4. Programs & Courses
-        // ---------------------------
-        $program = Program::create([
-            'academic_period_id' => $period->id,
-            'department_id'      => $dept->id,
-            'name'               => 'BS Information Technology',
-            'major'              => 'Web & Mobile Dev',
-        ]);
-
-        $sia = Course::firstOrCreate(
-            ['course_code' => 'SIA101'],
-            ['course_name' => 'System Integration & Analysis']
-        );
-
-        $dsa = Course::firstOrCreate(
-            ['course_code' => 'DSA102'],
-            ['course_name' => 'Data Structures & Algorithms']
-        );
-
-        $program->courses()->syncWithoutDetaching([$sia->id, $dsa->id]);
-
-        // ---------------------------
-        // 5. Profiles
-        // ---------------------------
-        // Instructors
-        $instructors->each(function ($inst, $i) use ($dept) {
-            InstructorProfile::create([
-                'user_id' => $inst->id,
-                'instructor_uid' => 'INST-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
-                'department_id' => $dept->id,
+            // CedAssignment – CED can be linked to all colleges
+            CedAssignment::firstOrCreate([
+                'user_id'    => $cedUser->id,
+                'college_id' => $college->id,
             ]);
-        });
 
-        // Students
-        $students->each(function ($stud, $i) use ($program) {
-            StudentProfile::create([
-                'user_id' => $stud->id,
-                'student_number' => '2025-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
-                'program_id' => $program->id,
-            ]);
-        });
+            // Now that departments exist, assign dean an instructor profile at the first department in this college
+            if (!empty($departmentModels)) {
+                $primaryDept = $departmentModels[0];
+                InstructorProfile::create([
+                    'user_id'        => $deanUser->id,
+                    'instructor_uid' => 'INST-' . str_pad($globalInstructorCounter++, 3, '0', STR_PAD_LEFT),
+                    'department_id'  => $primaryDept->id,
+                ]);
+            }
+        }
 
-        // ---------------------------
-        // 6. Admin role assignments
-        // ---------------------------
-        // ChairmanAssignment::create([
-        //     'user_id' => $chair->id,
-        //     'department_id' => $dept->id,
-        // ]);
+        // -----------------------------------
+        // 3. Programs, Courses, Sections, Students
+        // -----------------------------------
+        foreach ($academicPeriodsByDepartmentId as $deptId => $period) {
+            $dept        = Department::find($deptId);
+            $college     = $dept->college;
+            $collegeCode = substr($college->name, 0, 3); // just for codes
+            $deptCode    = substr($dept->name, 0, 3);
 
-        // CedAssignment::create([
-        //     'user_id' => $ced->id,
-        //     'college_id' => $college->id,
-        // ]);
+            // 1 program per academic period & department
+            $program = Program::firstOrCreate(
+                [
+                    'academic_period_id' => $period->id,
+                    'department_id'      => $dept->id,
+                    'name'               => 'BS ' . $deptCode,
+                    'major'              => null,
+                ]
+            );
 
-        $this->command->info('✅ Demo users, profiles, and org structure seeded successfully.');
+            // 2 courses per program
+            $courses = collect();
+            for ($c = 1; $c <= 2; $c++) {
+                $code = strtoupper($collegeCode . $deptCode) . sprintf('%03d', $globalCourseCounter++);
+                $course = Course::firstOrCreate(
+                    ['course_code' => $code],
+                    ['course_name' => $dept->name . " Course {$c}"]
+                );
+                $courses->push($course);
+            }
+
+            // Attach courses to program
+            $program->courses()->syncWithoutDetaching($courses->pluck('id')->all());
+
+            // Sections + students
+            $instructorsForDept = $instructorsByDepartmentId[$dept->id];
+
+            foreach ($courses as $course) {
+                // 1–2 sections per course (let's do 2 for richer data)
+                for ($s = 1; $s <= 2; $s++) {
+                    $sectionLabel = $s === 1 ? 'A' : 'B';
+
+                    // Pick a random instructor from the department
+                    $instructorUser = $instructorsForDept->random();
+
+                    $section = Section::create([
+                        'academic_period_id' => $period->id,
+                        'program_id'         => $program->id,
+                        'course_id'          => $course->id,
+                        'section_label'      => $sectionLabel,
+                        'instructor_user_id' => $instructorUser->id,
+                    ]);
+
+                    // 3 students per section
+                    for ($st = 1; $st <= 3; $st++) {
+                        $studentUser = User::factory()->create([
+                            'name'     => $dept->name . " Student {$globalStudentCounter}",
+                            'email'    => Str::slug($dept->name . "-student-{$globalStudentCounter}") . '@example.com',
+                            'password' => bcrypt('password'),
+                        ]);
+                        $studentUser->assignRole('student');
+
+                        // Student profile
+                        StudentProfile::create([
+                            'user_id'        => $studentUser->id,
+                            'student_number' => '2025-' . str_pad($globalStudentCounter, 4, '0', STR_PAD_LEFT),
+                            'program_id'     => $program->id,
+                        ]);
+
+                        // Enroll student into section (section_student pivot)
+                        DB::table('section_student')->insert([
+                            'section_id'       => $section->id,
+                            'student_user_id'  => $studentUser->id,
+                            'evaluated_at'     => null,
+                            'created_at'       => now(),
+                            'updated_at'       => now(),
+                        ]);
+
+                        $globalStudentCounter++;
+                    }
+                }
+            }
+        }
+
+        $this->command->info('✅ Demo data seeded: colleges, departments, periods, programs, courses, sections, instructors, chairmen, deans, CED, and students.');
     }
 }

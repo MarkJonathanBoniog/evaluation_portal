@@ -5,11 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class InstructorProfile extends Model
+class ChairmanAssignment extends Model
 {
     protected $fillable = [
         'user_id',
-        'instructor_uid',
         'department_id',
     ];
 

@@ -22,24 +22,41 @@ return new class extends Migration {
             $t->timestamps();
         });
 
+        // A chairman is an INSTRUCTOR assigned to a specific department
         Schema::create('chairman_assignments', function (Blueprint $t) {
             $t->id();
             $t->foreignId('user_id')->constrained()->cascadeOnDelete();
             $t->foreignId('department_id')->constrained()->cascadeOnDelete();
             $t->timestamps();
+
+            // one user per department, and avoid duplicates
             $t->unique(['user_id','department_id']);
         });
 
+        // A dean is an INSTRUCTOR assigned to a specific college
+        Schema::create('dean_assignments', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $t->foreignId('college_id')->constrained()->cascadeOnDelete();
+            $t->timestamps();
+
+            $t->unique(['user_id','college_id']);
+        });
+
+        // A CED is an INSTRUCTOR assigned at college / university scope
         Schema::create('ced_assignments', function (Blueprint $t) {
             $t->id();
             $t->foreignId('user_id')->constrained()->cascadeOnDelete();
             $t->foreignId('college_id')->constrained()->cascadeOnDelete();
             $t->timestamps();
+
             $t->unique(['user_id','college_id']);
         });
     }
+
     public function down(): void {
         Schema::dropIfExists('ced_assignments');
+        Schema::dropIfExists('dean_assignments');
         Schema::dropIfExists('chairman_assignments');
         Schema::dropIfExists('instructor_profiles');
         Schema::dropIfExists('student_profiles');

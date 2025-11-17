@@ -11,17 +11,54 @@
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-            <div class="text-sm text-gray-600 dark:text-gray-300">
+            <div class="text-md text-gray-900 dark:text-gray-300">
                 {{ $period->college->name }} - {{ $period->department->name }} || 
                 AY {{ $period->year_start }}–{{ $period->year_end }} • Term: <span class="capitalize">{{ $period->term }}</span>
             </div>
 
-            <form method="POST" action="{{ route('manage.programs.store', $period) }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                @csrf
-                <input name="name"  placeholder="e.g., BS IT" class="border-gray-300 rounded" required>
-                <input name="major" placeholder="e.g., Web & Mobile Dev" class="border-gray-300 rounded">
-                <button class="px-4 py-2 bg-blue-600 text-white rounded">Add Program</button>
-            </form>
+<form method="POST" action="{{ route('manage.programs.store', $period) }}"
+      class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+    @csrf
+
+    {{-- Program Name --}}
+    <div class="flex flex-col">
+        <label class="text-sm text-gray-600 dark:text-gray-300 mb-1">
+            Program Name
+        </label>
+        <input
+            name="name"
+            placeholder="e.g., BS IT"
+            class="border-gray-300 rounded"
+            required
+        >
+        @error('name')
+            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+        @enderror
+    </div>
+
+    {{-- Major --}}
+    <div class="flex flex-col">
+        <label class="text-sm text-gray-600 dark:text-gray-300 mb-1">
+            Major / Specialization
+        </label>
+        <input
+            name="major"
+            placeholder="e.g., Web & Mobile Dev"
+            class="border-gray-300 rounded"
+        >
+        @error('major')
+            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+        @enderror
+    </div>
+
+    {{-- Submit --}}
+    <div class="flex items-end">
+        <button class="px-4 py-2 bg-blue-600 text-white rounded w-full sm:w-auto">
+            Add Program
+        </button>
+    </div>
+</form>
+
         </div>
 
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">

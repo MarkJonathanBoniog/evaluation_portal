@@ -19,18 +19,23 @@
     </x-nav-link>
 @endrole
 
+{{-- Instructor: plain evaluation summary --}}
 @role('instructor')
     <x-nav-link :href="route('dashboard.instructor')" :active="request()->routeIs('dashboard.instructor')">
         {{ __('Evaluation Summary') }}
     </x-nav-link>
 @endrole
 
+{{-- Chairman / Dean / CED: leadership dashboards --}}
 @role('chairman')
     <x-nav-link :href="route('dashboard.chairman')" :active="request()->routeIs('dashboard.chairman')">
         {{ __('Chairman Dashboard') }}
     </x-nav-link>
-    <x-nav-link :href="route('manage.periods.index')" :active="request()->routeIs('manage.periods.*')">
-        {{ __('Evaluation Flow') }}
+@endrole
+
+@role('dean')
+    <x-nav-link :href="route('dashboard.dean')" :active="request()->routeIs('dashboard.dean')">
+        {{ __('Dean Dashboard') }}
     </x-nav-link>
 @endrole
 
@@ -38,10 +43,14 @@
     <x-nav-link :href="route('dashboard.ced')" :active="request()->routeIs('dashboard.ced')">
         {{ __('CED Dashboard') }}
     </x-nav-link>
-    <x-nav-link :href="route('manage.periods.index')" :active="request()->routeIs('manage.periods.*')">
-        {{ __('Evaluation Flow') }}
-    </x-nav-link>
 @endrole
+
+{{-- Shared Evaluation Management for chair/dean/ced --}}
+@hasanyrole('chairman|dean|ced')
+    <x-nav-link :href="route('manage.periods.index')" :active="request()->routeIs('manage.periods.*')">
+        {{ __('Evaluation Management') }}
+    </x-nav-link>
+@endhasanyrole
 
 @role('systemadmin')
     <x-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin')">
@@ -106,37 +115,50 @@
 
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            @role('student')
-                <x-responsive-nav-link :href="route('dashboard.student')" :active="request()->routeIs('dashboard.student')">
-                    {{ __('Evaluate') }}
-                </x-responsive-nav-link>
-            @endrole
+<div class="pt-2 pb-3 space-y-1">
+    @role('student')
+        <x-responsive-nav-link :href="route('dashboard.student')" :active="request()->routeIs('dashboard.student')">
+            {{ __('Evaluate') }}
+        </x-responsive-nav-link>
+    @endrole
 
-            @role('instructor')
-                <x-responsive-nav-link :href="route('dashboard.instructor')" :active="request()->routeIs('dashboard.instructor')">
-                    {{ __('Evaluation Summary') }}
-                </x-responsive-nav-link>
-            @endrole
+    @role('instructor')
+        <x-responsive-nav-link :href="route('dashboard.instructor')" :active="request()->routeIs('dashboard.instructor')">
+            {{ __('Evaluation Summary') }}
+        </x-responsive-nav-link>
+    @endrole
 
-            @role('chairman')
-                <x-responsive-nav-link :href="route('dashboard.chairman')" :active="request()->routeIs('dashboard.chairman')">
-                    {{ __('Chairman Management') }}
-                </x-responsive-nav-link>
-            @endrole
+    @role('chairman')
+        <x-responsive-nav-link :href="route('dashboard.chairman')" :active="request()->routeIs('dashboard.chairman')">
+            {{ __('Chairman Dashboard') }}
+        </x-responsive-nav-link>
+    @endrole
 
-            @role('ced')
-                <x-responsive-nav-link :href="route('dashboard.ced')" :active="request()->routeIs('dashboard.ced')">
-                    {{ __('CED Oversight') }}
-                </x-responsive-nav-link>
-            @endrole
+    @role('dean')
+        <x-responsive-nav-link :href="route('dashboard.dean')" :active="request()->routeIs('dashboard.dean')">
+            {{ __('Dean Dashboard') }}
+        </x-responsive-nav-link>
+    @endrole
 
-            @role('systemadmin')
-                <x-responsive-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin')">
-                    {{ __('System Admin Control') }}
-                </x-responsive-nav-link>
-            @endrole
-        </div>
+    @role('ced')
+        <x-responsive-nav-link :href="route('dashboard.ced')" :active="request()->routeIs('dashboard.ced')">
+            {{ __('CED Dashboard') }}
+        </x-responsive-nav-link>
+    @endrole
+
+    @hasanyrole('chairman|dean|ced')
+        <x-responsive-nav-link :href="route('manage.periods.index')" :active="request()->routeIs('manage.periods.*')">
+            {{ __('Evaluation Management') }}
+        </x-responsive-nav-link>
+    @endhasanyrole
+
+    @role('systemadmin')
+        <x-responsive-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin')">
+            {{ __('System Admin Control') }}
+        </x-responsive-nav-link>
+    @endrole
+</div>
+
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">

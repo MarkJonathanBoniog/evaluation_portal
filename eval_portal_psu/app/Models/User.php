@@ -51,14 +51,38 @@ class User extends Authenticatable
     public function chairedDepartments(){
         return $this->belongsToMany(Department::class, 'chairman_assignments');
     }
+    public function deanColleges()
+    {
+        return $this->belongsToMany(College::class, 'dean_assignments');
+    }
     public function cedColleges(){
         return $this->belongsToMany(College::class, 'ced_assignments');
+    }
+
+    public function taughtSections()
+    {
+        return $this->hasMany(Section::class, 'instructor_user_id');
     }
 
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'section_student', 'student_user_id', 'section_id')
             ->withTimestamps();
+    }
+
+    public function chairmanAssignments()
+    {
+        return $this->hasMany(ChairmanAssignment::class);
+    }
+
+    public function deanAssignments()
+    {
+        return $this->hasMany(DeanAssignment::class);
+    }
+
+    public function cedAssignments()
+    {
+        return $this->hasMany(CedAssignment::class);
     }
 
 }

@@ -5,12 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class InstructorProfile extends Model
+class DeanAssignment extends Model
 {
     protected $fillable = [
         'user_id',
-        'instructor_uid',
-        'department_id',
+        'college_id',
     ];
 
     public function user(): BelongsTo
@@ -18,8 +17,8 @@ class InstructorProfile extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function department(): BelongsTo
+    public function college(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(College::class);
     }
 }
