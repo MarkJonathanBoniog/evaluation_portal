@@ -36,6 +36,13 @@ class DemoDataSeeder extends Seeder
         ]);
         $ced->assignRole('ced');
 
+        $dean = User::factory()->create([
+            'name' => 'Dean IT',
+            'email' => 'dean@example.com',
+            'password' => bcrypt('password'),
+        ]);
+        $ced->assignRole('ced');
+
         $chair = User::factory()->create([
             'name' => 'IT Chairman',
             'email' => 'chair@example.com',

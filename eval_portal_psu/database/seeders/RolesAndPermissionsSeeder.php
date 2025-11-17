@@ -30,9 +30,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $roles = [
             'student'     => ['evaluations.submit'],
             'instructor'  => ['evaluations.view_own_summary'],
-            'chairman'    => ['departments.manage','programs.manage','courses.manage','sections.manage','rosters.manage'],
-            'ced'         => ['colleges.manage','departments.manage','programs.manage','courses.manage','sections.manage'],
-            'systemadmin' => Permission::pluck('name')->all(), // everything
+            'chairman'    => ['evaluations.view_own_summary','departments.manage','programs.manage','courses.manage','sections.manage','rosters.manage'],
+            'dean'         => ['evaluations.view_own_summary','colleges.manage','departments.manage','programs.manage','courses.manage','sections.manage'],
+            'ced'         => ['evaluations.view_own_summary','colleges.manage','departments.manage','programs.manage','courses.manage','sections.manage'],
+            'systemadmin' => Permission::pluck('name')->all(),
         ];
 
         foreach ($roles as $role => $allowed) {
