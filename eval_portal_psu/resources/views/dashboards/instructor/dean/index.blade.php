@@ -71,10 +71,16 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-2 text-right">
-                                            <a href="{{ route('manage.superior-evaluations.edit', [$period, $chair->chairman_id]) }}"
-                                               class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
-                                                Evaluate
-                                            </a>
+                                            @if(!$deanDone)
+                                                <a href="{{ route('manage.superior-evaluations.edit', [$period, $chair->chairman_id]) }}"
+                                                class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
+                                                    Evaluate
+                                                </a>
+                                            @else
+                                                <span class="text-xs text-slate-500">
+                                                    Already evaluated
+                                                </span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

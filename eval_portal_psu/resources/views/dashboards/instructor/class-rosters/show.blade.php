@@ -1,13 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-breadcrumbs :links="[
-            $period->college->name . ' - ' . $period->department->name => route('manage.periods.index'),
-            $program->name . ' - ' . ($program->major ?? '') => route('manage.programs.index', $period),
-            $course->course_code . ' - ' . $course->course_name => route('manage.courses.index', [$period, $program]),
-            'Section: ' . $section->section_label => route('manage.sections.index', [$period, $program, $course]),
-            'Class Roster' => '#',
-        ]" />
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">Class Roster</h2>
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
+            Class Roster – {{ $course->course_code }} {{ $section->section_label }}
+            <span class="text-sm text-gray-500">
+                ({{ $course->course_name }})
+            </span>
+        </h2>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -28,7 +26,7 @@
         @endif
 
         {{-- Header actions (CSV) --}}
-        <div class="flex flex-col sm:flex-row justify-between gap-3 sm:items-start bg-white dark:bg-gray-800 p-4 sm:rounded-lg shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between gap-3 sm:items-start bg-white dark:bg-gray-800 p-4 sm:rounded-lg shadow-sm">
             <div class="text-sm text-gray-700 dark:text-gray-200 space-y-0.5">
             <h3 class="font-semibold text-lg text-gray-800 dark:text-gray-100">Manage Class Roster for Section {{ $section->section_label }}</h3>
                 <div><span class="font-medium"><strong>Course:</strong></span> {{ $course->course_code }} — {{ $course->course_name }} </div>
@@ -49,10 +47,53 @@
             </div>
         </div>
 
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {{-- 1. Total students --}}
+            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 flex flex-col">
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase">
+                    Total Students
+                </span>
+                <span class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ $totalStudents }}
+                </span>
+                <span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Enrolled in this section
+                </span>
+            </div>
+
+            {{-- 2. Students who evaluated --}}
+            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 flex flex-col">
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase">
+                    Completed Evaluations
+                </span>
+                <span class="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {{ $totalEvaluated }}
+                </span>
+                <span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Students who have submitted their SET
+                </span>
+            </div>
+
+            {{-- 3. Evaluation percentage --}}
+            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4 flex flex-col">
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase">
+                    Evaluation Coverage
+                </span>
+                <span class="mt-2 text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {{ $totalStudents > 0 ? $evaluationRate . '%' : '—' }}
+                </span>
+                <span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Of students in this section have evaluated you
+                </span>
+            </div>
+        </div>
+
+
+
         {{-- Manual add (UNCHANGED core logic) --}}
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
             <form method="POST"
-      action="{{ route('manage.roster.store', [$period, $program, $course, $section]) }}"
+      action="{{ route('instructor.class-rosters.store', $section) }}"
       class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
     @csrf
 
@@ -149,7 +190,7 @@
                             </td>
                             <td class="py-2 text-right">
                                 <form method="POST"
-                                      action="{{ route('manage.roster.destroy', [$period, $program, $course, $section, $st->id]) }}"
+                                      action="{{ route('instructor.class-rosters.destroy', [$section, $st->id]) }}"
                                       class="inline">
                                     @csrf @method('DELETE')
                                     <button class="text-red-600 hover:underline">Remove</button>
@@ -185,14 +226,14 @@
                 </ol>
 
                 <div class="mb-3">
-                    <a href="{{ route('manage.roster.download-template', [$period, $program, $course, $section]) }}"
+                    <a href="{{ route('instructor.class-rosters.download-template', [$period, $program, $course, $section]) }}"
                        class="inline-flex items-center gap-2 text-blue-600 hover:underline">
                         ⬇Download current template
                     </a>
                 </div>
 
                 <form method="POST"
-                      action="{{ route('manage.roster.upload-csv', [$period, $program, $course, $section]) }}"
+                      action="{{ route('instructor.class-rosters.upload-csv', [$period, $program, $course, $section]) }}"
                       enctype="multipart/form-data" class="space-y-4">
                     @csrf
 

@@ -41,6 +41,36 @@ Route::middleware(['auth'])->prefix('dashboard/student')->group(function () {
         ->name('student.evaluation.store');
 });
 
+use App\Http\Controllers\Dashboards\InstructorClassRosterController;
+
+Route::middleware(['auth','role:instructor'])
+    ->prefix('dashboard/instructor')
+    ->name('instructor.')
+    ->group(function () {
+
+        // List all sections the instructor teaches
+        Route::get('class-rosters', [InstructorClassRosterController::class, 'index'])
+            ->name('class-rosters.index');
+
+        // Manage roster for a specific section
+        Route::get('class-rosters/{section}', [InstructorClassRosterController::class, 'show'])
+            ->name('class-rosters.show');
+
+        // Add/remove students (manual add)
+        Route::post('class-rosters/{section}/students', [InstructorClassRosterController::class, 'store'])
+            ->name('class-rosters.store');
+
+        Route::delete('class-rosters/{section}/students/{student}', [InstructorClassRosterController::class, 'destroy'])
+            ->name('class-rosters.destroy');
+
+        // (Optional) CSV download/upload for instructors – if you want them:
+        Route::get('class-rosters/{section}/download-template', [InstructorClassRosterController::class, 'downloadTemplate'])
+            ->name('class-rosters.download-template');
+        Route::post('class-rosters/{section}/upload-csv', [InstructorClassRosterController::class, 'uploadCsv'])
+            ->name('class-rosters.upload-csv');
+    });
+
+
 
 require __DIR__.'/auth.php';
 require __DIR__.'/main.php';

@@ -15,7 +15,7 @@
                     {{-- Role-based navigation --}}
 @role('student')
     <x-nav-link :href="route('dashboard.student')" :active="request()->routeIs('dashboard.student')">
-        {{ __('Evaluate') }}
+        {{ __('Evaluate Instructors') }}
     </x-nav-link>
 @endrole
 
@@ -23,6 +23,9 @@
 @role('instructor')
     <x-nav-link :href="route('dashboard.instructor')" :active="request()->routeIs('dashboard.instructor')">
         {{ __('Evaluation Summary') }}
+    </x-nav-link>
+    <x-nav-link :href="route('instructor.class-rosters.index')" :active="request()->routeIs('instructor.class-rosters.index')">
+        {{ __('Section and Class Rosters') }}
     </x-nav-link>
 @endrole
 

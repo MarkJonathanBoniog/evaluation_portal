@@ -115,7 +115,7 @@ class StudentEvaluationController extends Controller
 
             DB::commit();
 
-            return redirect()->route('student.dashboard')
+            return redirect()->route('dashboard.student')
                 ->with('success', 'Evaluation submitted successfully! Thank you for your feedback.');
         } catch (\Exception $e) {
             DB::rollBack();

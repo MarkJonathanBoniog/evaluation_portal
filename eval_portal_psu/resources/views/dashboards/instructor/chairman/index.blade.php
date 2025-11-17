@@ -79,11 +79,16 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-2 text-right">
-                                            {{-- TODO: wire this to your actual evaluation route --}}
-                                            <a href="#"
-                                               class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
-                                                Evaluate
-                                            </a>
+                                            @if(!$done)
+                                                <a href="{{ route('manage.superior-evaluations.edit', [$period, $inst->instructor_id]) }}"
+                                                class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
+                                                    Evaluate
+                                                </a>
+                                            @else
+                                                <span class="text-xs text-slate-500">
+                                                    Already evaluated
+                                                </span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -127,11 +132,16 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-2 text-right">
-                                        {{-- TODO: wire this to your actual evaluation route --}}
-                                        <a href="#"
-                                           class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
-                                            Evaluate
-                                        </a>
+                                        @if(!$deanDone)
+                                            <a href="{{ route('manage.superior-evaluations.edit', [$period, $dean->dean_id]) }}"
+                                            class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700">
+                                                Evaluate
+                                            </a>
+                                        @else
+                                            <span class="text-xs text-slate-500">
+                                                Already evaluated
+                                            </span>
+                                        @endif
                                     </td>
                                 </tr>
                             </tbody>

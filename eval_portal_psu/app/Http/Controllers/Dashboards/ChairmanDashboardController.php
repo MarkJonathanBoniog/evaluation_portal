@@ -20,10 +20,10 @@ class ChairmanDashboardController extends Controller
 
         if ($departmentIds->isEmpty()) {
             return view('dashboards.instructor.chairman.index', [
-                'periods'            => collect(),
-                'instructorsByPeriod'=> collect(),
-                'evaluationStatus'   => collect(),
-                'deansByCollege'     => collect(),
+                'periods'             => collect(),
+                'instructorsByPeriod' => collect(),
+                'evaluationStatus'    => collect(),
+                'deansByCollege'      => collect(),
             ]);
         }
 
@@ -38,20 +38,50 @@ class ChairmanDashboardController extends Controller
 
         if ($periodIds->isEmpty()) {
             return view('dashboards.instructor.chairman.index', [
-                'periods'            => $periods,
-                'instructorsByPeriod'=> collect(),
-                'evaluationStatus'   => collect(),
-                'deansByCollege'     => collect(),
+                'periods'             => $periods,
+                'instructorsByPeriod' => collect(),
+                'evaluationStatus'    => collect(),
+                'deansByCollege'      => collect(),
             ]);
         }
 
+        // 2.5) Colleges covered by these periods
+        $collegeIds = $periods->pluck('college_id')->filter()->unique();
+
+        // 5) Deans per college (so chairman can evaluate dean too)
+        if ($collegeIds->isEmpty()) {
+            $deansByCollege = collect();
+            $deanIds        = collect();
+        } else {
+            // Build once so we can both group and pluck IDs
+            $deanAssignments = DB::table('dean_assignments')
+                ->join('users', 'users.id', '=', 'dean_assignments.user_id')
+                ->whereIn('dean_assignments.college_id', $collegeIds)
+                ->select(
+                    'dean_assignments.user_id as dean_id',
+                    'users.name as dean_name',
+                    'dean_assignments.college_id'
+                )
+                ->orderBy('users.name')
+                ->get();
+
+            // For the view: grouped by college
+            $deansByCollege = $deanAssignments->groupBy('college_id');
+
+            // For filtering instructors: flat list of dean user IDs
+            $deanIds = $deanAssignments->pluck('dean_id')->unique();
+        }
+
         // 3) Instructors teaching any section in those periods (EXCLUDING this chairman)
-        // Grouped by academic_period_id
+        // AND excluding anyone who is also a dean (Option A)
         $instructorsByPeriod = Section::query()
             ->join('users', 'users.id', '=', 'sections.instructor_user_id')
             ->leftJoin('instructor_profiles', 'instructor_profiles.user_id', '=', 'users.id')
             ->whereIn('sections.academic_period_id', $periodIds)
             ->where('users.id', '!=', $user->id) // chairman must not evaluate himself as instructor
+            ->when($deanIds->isNotEmpty(), function ($q) use ($deanIds) {
+                $q->whereNotIn('users.id', $deanIds); // EXCLUDE deans from instructor list
+            })
             ->select(
                 'sections.academic_period_id',
                 'users.id as instructor_id',
@@ -80,31 +110,11 @@ class ChairmanDashboardController extends Controller
             return [$key => true];
         });
 
-        // 5) Deans per college (so chairman can evaluate dean too)
-        // Colleges are derived from the same periods
-        $collegeIds = $periods->pluck('college_id')->filter()->unique();
-
-        if ($collegeIds->isEmpty()) {
-            $deansByCollege = collect();
-        } else {
-            $deansByCollege = DB::table('dean_assignments')
-                ->join('users', 'users.id', '=', 'dean_assignments.user_id')
-                ->whereIn('dean_assignments.college_id', $collegeIds)
-                ->select(
-                    'dean_assignments.user_id as dean_id',
-                    'users.name as dean_name',
-                    'dean_assignments.college_id'
-                )
-                ->orderBy('users.name')
-                ->get()
-                ->groupBy('college_id');
-        }
-
         return view('dashboards.instructor.chairman.index', [
-            'periods'            => $periods,
-            'instructorsByPeriod'=> $instructorsByPeriod,
-            'evaluationStatus'   => $evaluationStatus,
-            'deansByCollege'     => $deansByCollege,
+            'periods'             => $periods,
+            'instructorsByPeriod' => $instructorsByPeriod,
+            'evaluationStatus'    => $evaluationStatus,
+            'deansByCollege'      => $deansByCollege,
         ]);
     }
 }

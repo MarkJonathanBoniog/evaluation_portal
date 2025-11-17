@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Dashboards\InstructorDashboardController;
 use App\Http\Controllers\Dashboards\ChairmanDashboardController;
 use App\Http\Controllers\Dashboards\DeanDashboardController;
 use App\Http\Controllers\Dashboards\CedDashboardController;
@@ -10,8 +11,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/student', fn () => view('dashboards.student.index'))
         ->name('dashboard.student')->middleware('role:student');
 
-    Route::get('/dashboard/instructor', fn () => view('dashboards.instructor.index'))
-        ->name('dashboard.instructor')->middleware('role:instructor');
+    Route::get('/dashboard/instructor', [InstructorDashboardController::class, 'index'])
+        ->name('dashboard.instructor')
+        ->middleware(['auth','role:instructor']);
 
     Route::get('/dashboard/chairman', [ChairmanDashboardController::class, 'index'])
         ->name('dashboard.chairman')
@@ -32,6 +34,7 @@ use App\Http\Controllers\Manage\ProgramController;
 use App\Http\Controllers\Manage\CourseController;
 use App\Http\Controllers\Manage\SectionController;
 use App\Http\Controllers\Manage\RosterController;
+use App\Http\Controllers\Manage\SuperiorEvaluationController;
 
 Route::middleware(['auth','role:chairman|dean|ced|systemadmin'])
     ->prefix('manage')->name('manage.')
@@ -95,6 +98,15 @@ Route::middleware(['auth','role:chairman|dean|ced|systemadmin'])
         Route::post('periods/{period}/programs/{program}/courses/{course}/sections/{section}/roster/upload-csv',
             [RosterController::class, 'uploadCsv'])
             ->name('roster.upload-csv');
+
+            // Superior evaluations (chairman, dean, CED)
+        Route::get('periods/{period}/superior-evaluations/{subject}',
+            [SuperiorEvaluationController::class, 'edit'])
+            ->name('superior-evaluations.edit');
+
+        Route::post('periods/{period}/superior-evaluations/{subject}',
+            [SuperiorEvaluationController::class, 'store'])
+            ->name('superior-evaluations.store');
     });
 
     //Routes for forms
