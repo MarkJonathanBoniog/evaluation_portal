@@ -17,11 +17,15 @@ class InstructorClassRosterController extends Controller
     /**
      * List all sections this instructor teaches.
      */
-    public function index()
+    public function index(Request $request)
     {
         $instructor = Auth::user();
 
-        $sections = Section::with(['course', 'program', 'period'])
+        $filters = [
+            'q' => trim((string) $request->get('q', '')),
+        ];
+
+        $baseQuery = Section::with(['course', 'program', 'period'])
             ->where('instructor_user_id', $instructor->id)
             ->withCount([
                 'students', // students_count
@@ -29,16 +33,28 @@ class InstructorClassRosterController extends Controller
                     $q->whereNotNull('section_student.evaluated_at');
                 },
             ])
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->whereHas('course', function ($cq) use ($filters) {
+                        $cq->where('course_code', 'like', '%' . $filters['q'] . '%')
+                           ->orWhere('course_name', 'like', '%' . $filters['q'] . '%');
+                    })->orWhereHas('program', function ($pq) use ($filters) {
+                        $pq->where('name', 'like', '%' . $filters['q'] . '%');
+                    })->orWhere('section_label', 'like', '%' . $filters['q'] . '%');
+                });
+            })
             ->orderByDesc('academic_period_id')
-            ->orderBy('section_label')
-            ->get();
+            ->orderBy('section_label');
 
-            $totalSections   = $sections->count();
-            $totalStudents   = $sections->sum('students_count');
-            $totalEvaluated  = $sections->sum('evaluated_students_count');
-            $evaluationRate  = $totalStudents > 0
-                ? round(($totalEvaluated / $totalStudents) * 100, 1)
-                : 0;
+        $stats = (clone $baseQuery)->get();
+        $totalSections   = $stats->count();
+        $totalStudents   = $stats->sum('students_count');
+        $totalEvaluated  = $stats->sum('evaluated_students_count');
+        $evaluationRate  = $totalStudents > 0
+            ? round(($totalEvaluated / $totalStudents) * 100, 1)
+            : 0;
+
+        $sections = $baseQuery->paginate(40)->withQueryString();
 
         return view('dashboards.instructor.class-rosters.index', [
             'sections'        => $sections,
@@ -46,13 +62,14 @@ class InstructorClassRosterController extends Controller
             'totalStudents'   => $totalStudents,
             'totalEvaluated'  => $totalEvaluated,
             'evaluationRate'  => $evaluationRate,
+            'filters'         => $filters,
         ]);
     }
 
     /**
      * Show/manage roster for a specific section (only if it belongs to this instructor).
      */
-  public function show(Section $section)
+  public function show(Request $request, Section $section)
 {
     $user = Auth::user();
 
@@ -66,20 +83,34 @@ class InstructorClassRosterController extends Controller
     $program = $section->program;
     $course  = $section->course;
 
-    // Already-enrolled students
-    $students = $section->students()
-        ->with('studentProfile:id,user_id,student_number')
-        ->orderBy('users.name')
-        ->get();
+    $filters = [
+        'q' => trim((string) $request->get('q', '')),
+    ];
 
     // === NEW: per-section summary ===
-    $totalStudents  = $students->count();
-    $totalEvaluated = $students->filter(fn ($s) => !is_null($s->pivot->evaluated_at))->count();
+    $totalStudents  = $section->students()->count();
+    $totalEvaluated = $section->students()->wherePivotNotNull('evaluated_at')->count();
     $evaluationRate = $totalStudents > 0
         ? round(($totalEvaluated / $totalStudents) * 100, 1)
         : 0;
 
-    $enrolledIds = $students->pluck('id');
+    // Already-enrolled students
+    $students = $section->students()
+        ->with('studentProfile:id,user_id,student_number')
+        ->when($filters['q'] !== '', function ($q) use ($filters) {
+            $q->where(function ($sub) use ($filters) {
+                $sub->where('users.name', 'like', '%' . $filters['q'] . '%')
+                    ->orWhere('users.email', 'like', '%' . $filters['q'] . '%')
+                    ->orWhereHas('studentProfile', function ($sp) use ($filters) {
+                        $sp->where('student_number', 'like', '%' . $filters['q'] . '%');
+                    });
+            });
+        })
+        ->orderBy('users.name')
+        ->paginate(40)
+        ->withQueryString();
+
+    $enrolledIds = $section->students()->pluck('users.id');
 
     // Candidates = students not yet in this section
     $candidates = User::role('student')
@@ -98,6 +129,7 @@ class InstructorClassRosterController extends Controller
         'totalStudents',
         'totalEvaluated',
         'evaluationRate',
+        'filters',
     ));
 }
 

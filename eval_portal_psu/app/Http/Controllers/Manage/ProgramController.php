@@ -9,15 +9,25 @@ use Illuminate\Http\Request;
 
 class ProgramController extends Controller
 {
-    public function index(AcademicPeriod $period)
+    public function index(Request $request, AcademicPeriod $period)
     {
-        // show programs for the same department as the selected period
+        $filters = [
+            'q' => trim((string) $request->get('q', '')),
+        ];
+
         $programs = Program::where('academic_period_id', $period->id)
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('name', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('major', 'like', '%' . $filters['q'] . '%');
+                });
+            })
             ->withCount('courses')
             ->orderBy('name')
-            ->get();
+            ->paginate(40)
+            ->withQueryString();
 
-        return view('manage.programs.index', compact('period', 'programs'));
+        return view('manage.programs.index', compact('period', 'programs', 'filters'));
     }
 
     public function store(Request $r, AcademicPeriod $period)

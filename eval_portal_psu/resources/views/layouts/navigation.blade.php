@@ -34,6 +34,9 @@
     <x-nav-link :href="route('dashboard.chairman')" :active="request()->routeIs('dashboard.chairman')">
         {{ __('Chairman Dashboard') }}
     </x-nav-link>
+    <x-nav-link :href="route('dashboard.evaluation-summary')" :active="request()->routeIs('dashboard.evaluation-summary') || request()->routeIs('dashboard.evaluation-summary.show')">
+        {{ __('Evaluation Summary') }}
+    </x-nav-link>
 @endrole
 
 @role('dean')
@@ -56,8 +59,8 @@
 @endhasanyrole
 
 @role('systemadmin')
-    <x-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin')">
-        {{ __('System Admin Control') }}
+    <x-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin') || request()->routeIs('dashboard.evaluation-summary') || request()->routeIs('dashboard.evaluation-summary.show')">
+        {{ __('Evaluation Summary') }}
     </x-nav-link>
 @endrole
                 </div>
@@ -135,6 +138,9 @@
         <x-responsive-nav-link :href="route('dashboard.chairman')" :active="request()->routeIs('dashboard.chairman')">
             {{ __('Chairman Dashboard') }}
         </x-responsive-nav-link>
+        <x-responsive-nav-link :href="route('dashboard.evaluation-summary')" :active="request()->routeIs('dashboard.evaluation-summary') || request()->routeIs('dashboard.evaluation-summary.show')">
+            {{ __('Evaluation Summary') }}
+        </x-responsive-nav-link>
     @endrole
 
     @role('dean')
@@ -156,8 +162,8 @@
     @endhasanyrole
 
     @role('systemadmin')
-        <x-responsive-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin')">
-            {{ __('System Admin Control') }}
+        <x-responsive-nav-link :href="route('dashboard.systemadmin')" :active="request()->routeIs('dashboard.systemadmin') || request()->routeIs('dashboard.evaluation-summary') || request()->routeIs('dashboard.evaluation-summary.show')">
+            {{ __('Evaluation Summary') }}
         </x-responsive-nav-link>
     @endrole
 </div>

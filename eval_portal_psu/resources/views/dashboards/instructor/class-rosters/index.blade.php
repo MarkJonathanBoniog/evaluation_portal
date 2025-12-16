@@ -3,6 +3,9 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
             Lit of Sections
         </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            See every section you handle along with class sizes and evaluation coverage. Open a roster to manage students or monitor who has completed evaluations.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -68,9 +71,30 @@
         </div>
 
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <form method="GET" class="flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap mb-4">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ $filters['q'] ?? '' }}"
+                        placeholder="Search course, program, or section"
+                        class="mt-1 w-full rounded border-gray-300"
+                    >
+                </div>
+                <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                    <a href="{{ route('instructor.class-rosters.index') }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+                </div>
+            </form>
+
             @if($sections->isEmpty())
                 <p class="text-sm text-gray-600 dark:text-gray-300">
-                    You are not currently assigned to any sections.
+                    @if($filters['q'] ?? false)
+                        No sections match your search.
+                    @else
+                        You are not currently assigned to any sections.
+                    @endif
                 </p>
             @else
                 <div class="overflow-x-auto">
@@ -123,6 +147,7 @@
                         </tbody>
                     </table>
                 </div>
+                <x-table-footer :paginator="$sections" />
             @endif
         </div>
     </div>

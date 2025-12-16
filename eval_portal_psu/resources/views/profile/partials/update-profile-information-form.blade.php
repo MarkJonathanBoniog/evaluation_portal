@@ -47,6 +47,75 @@
             @endif
         </div>
 
+        @if($user->hasRole('student'))
+            <div>
+                <x-input-label for="student_number" :value="__('Student Number')" />
+                <input
+                    id="student_number"
+                    type="text"
+                    class="mt-1 block w-full rounded-md border-gray-200 bg-gray-100 text-gray-700"
+                    value="{{ $user->studentProfile?->student_number ?? 'Not assigned' }}"
+                    readonly
+                    tabindex="-1"
+                >
+                <p class="mt-1 text-xs text-gray-500">{{ __('Student numbers are managed by administrators.') }}</p>
+            </div>
+        @endif
+
+        @if($user->hasRole('instructor'))
+            <div>
+                <x-input-label for="faculty_rank" :value="__('Faculty Rank')" />
+                <x-text-input
+                    id="faculty_rank"
+                    name="faculty_rank"
+                    type="text"
+                    class="mt-1 block w-full"
+                    :value="old('faculty_rank', $facultyRank)"
+                    autocomplete="organization-title"
+                />
+                <x-input-error class="mt-2" :messages="$errors->get('faculty_rank')" />
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <x-input-label for="college_select" :value="__('College')" />
+                <select
+                    id="college_select"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-700"
+                >
+                    <option value="">-- {{ __('Select College') }} --</option>
+                    @foreach($colleges as $college)
+                        <option value="{{ $college->id }}" @selected($selectedCollegeId === $college->id)>
+                            {{ $college->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('Choose your college to filter departments.') }}</p>
+            </div>
+            <div>
+                <x-input-label for="department_id" :value="__('Department')" />
+                <select
+                    id="department_id"
+                    name="department_id"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-700"
+                    required
+                >
+                    <option value="">-- {{ __('Select Department') }} --</option>
+                    @foreach($departments as $dept)
+                        <option
+                            value="{{ $dept->id }}"
+                            data-college="{{ $dept->college?->id }}"
+                            @selected($selectedDepartmentId === $dept->id)
+                        >
+                            {{ $dept->college?->name ? $dept->college->name.' — '.$dept->name : $dept->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <x-input-error class="mt-2" :messages="$errors->get('department_id')" />
+            </div>
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 
@@ -61,4 +130,32 @@
             @endif
         </div>
     </form>
+
+    <script>
+        (function() {
+            const collegeSelect = document.getElementById('college_select');
+            const departmentSelect = document.getElementById('department_id');
+            if (!collegeSelect || !departmentSelect) return;
+
+            const filterDepartments = () => {
+                const selectedCollege = collegeSelect.value;
+                Array.from(departmentSelect.options).forEach((opt) => {
+                    if (!opt.value) return; // skip placeholder
+                    const match = !selectedCollege || opt.dataset.college === selectedCollege;
+                    opt.hidden = !match;
+                });
+
+                // If current selection is hidden, reset to placeholder
+                if (departmentSelect.selectedOptions.length) {
+                    const current = departmentSelect.selectedOptions[0];
+                    if (current.hidden) {
+                        departmentSelect.value = '';
+                    }
+                }
+            };
+
+            collegeSelect.addEventListener('change', filterDepartments);
+            filterDepartments();
+        })();
+    </script>
 </section>

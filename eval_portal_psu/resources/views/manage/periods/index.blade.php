@@ -1,13 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
-                Academic Periods
-            </h2>
+        <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+            <div class="flex-1">
+                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
+                    Academic Periods
+                </h2>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    Review and manage academic periods along with their college and department scope. Create new periods or refine existing ones to keep evaluations aligned with the current term.
+                </p>
+            </div>
 
             @hasanyrole('chairman|dean|ced|systemadmin')
                 <a href="{{ route('manage.periods.create') }}"
-                   class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">
+                   class="shrink-0 inline-flex items-center px-3 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap lg:self-end">
                     + New Academic Period
                 </a>
             @endhasanyrole
@@ -22,9 +27,54 @@
                 </div>
             @endif
 
+            <form method="GET" class="flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap mb-6">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ $filters['q'] ?? '' }}"
+                        placeholder="Search college or department"
+                        class="mt-1 w-full rounded border-gray-300"
+                    >
+                </div>
+                @unlessrole('chairman')
+                    <div class="w-full lg:w-60">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">College</label>
+                        <select name="college_id" class="mt-1 w-full rounded border-gray-300">
+                            <option value="">All colleges</option>
+                            @foreach($colleges as $college)
+                                <option value="{{ $college->id }}" @selected((string)$college->id === (string)($filters['college_id'] ?? ''))>
+                                    {{ $college->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="w-full lg:w-72">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
+                        <select name="department_id" class="mt-1 w-full rounded border-gray-300">
+                            <option value="">All departments</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}" @selected((string)$dept->id === (string)($filters['department_id'] ?? ''))>
+                                    {{ $dept->name }} @if($dept->college_id) ({{ $colleges->firstWhere('id', $dept->college_id)->name ?? 'No College' }}) @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endunlessrole
+                <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                    <a href="{{ route('manage.periods.index') }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+                </div>
+            </form>
+
             @if($periods->isEmpty())
                 <p class="text-sm text-gray-600 dark:text-gray-300">
-                    No academic periods have been created yet.
+                    @if($filters['q'] ?? $filters['college_id'] ?? $filters['department_id'] ?? false)
+                        No academic periods match your search.
+                    @else
+                        No academic periods have been created yet.
+                    @endif
                 </p>
             @else
                 <div class="overflow-x-auto">
@@ -80,9 +130,7 @@
                     </table>
                 </div>
 
-                <div class="mt-4">
-                    {{ $periods->links() }}
-                </div>
+                <x-table-footer :paginator="$periods" />
             @endif
         </div>
     </div>

@@ -1,6 +1,12 @@
 {{-- resources/views/manage/superior-evaluations/form.blade.php --}}
 <x-app-layout>
     <div class="min-h-screen bg-gray-50 py-8">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+            <a href="{{ route($backRoute) }}"
+               class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200">
+                &larr; Back to evaluation list
+            </a>
+        </div>
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
@@ -65,6 +71,7 @@
                   action="{{ route('manage.superior-evaluations.store', [$period, $subjectUser]) }}"
                   method="POST">
                 @csrf
+                <input type="hidden" name="is_read_only" value="{{ $isReadOnly ? 1 : 0 }}">
 
                 <!-- Section A: Management of Teaching and Learning -->
                 <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
@@ -101,7 +108,8 @@
                                                value="{{ $i }}"
                                                required
                                                class="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
-                                               {{ old($key) == $i ? 'checked' : '' }}>
+                                               {{ $isReadOnly ? 'disabled' : '' }}
+                                               @checked(old($key, optional($evaluation)->{$key}) == $i) >
                                         <span class="ml-2 text-sm text-gray-700">{{ $i }}</span>
                                     </label>
                                 @endfor
@@ -148,7 +156,8 @@
                                                value="{{ $i }}"
                                                required
                                                class="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
-                                               {{ old($key) == $i ? 'checked' : '' }}>
+                                               {{ $isReadOnly ? 'disabled' : '' }}
+                                               @checked(old($key, optional($evaluation)->{$key}) == $i) >
                                         <span class="ml-2 text-sm text-gray-700">{{ $i }}</span>
                                     </label>
                                 @endfor
@@ -193,7 +202,8 @@
                                                value="{{ $i }}"
                                                required
                                                class="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
-                                               {{ old($key) == $i ? 'checked' : '' }}>
+                                               {{ $isReadOnly ? 'disabled' : '' }}
+                                               @checked(old($key, optional($evaluation)->{$key}) == $i) >
                                         <span class="ml-2 text-sm text-gray-700">{{ $i }}</span>
                                     </label>
                                 @endfor
@@ -211,32 +221,41 @@
                         Other Comments and Suggestions (Optional)
                     </h2>
                     <textarea name="comment" rows="4"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Please provide any additional comments or suggestions...">{{ old('comment') }}</textarea>
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $isReadOnly ? 'bg-gray-100 cursor-not-allowed' : '' }}"
+                        placeholder="Please provide any additional comments or suggestions..."
+                        {{ $isReadOnly ? 'disabled' : '' }}>{{ old('comment', optional($evaluation)->comment) }}</textarea>
                     @error('comment')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <!-- Submit Button -->
-                <div class="bg-white shadow-sm rounded-lg p-6">
-                    <div class="flex items-start space-x-3 mb-4">
-                        <svg class="w-5 h-5 text-yellow-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                  clip-rule="evenodd" />
-                        </svg>
+                @if(! $isReadOnly)
+                    <div class="bg-white shadow-sm rounded-lg p-6">
+                        <div class="flex items-start space-x-3 mb-4">
+                            <svg class="w-5 h-5 text-yellow-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                      clip-rule="evenodd" />
+                            </svg>
+                            <p class="text-sm text-gray-600">
+                                <strong>Important:</strong> Once submitted, you cannot edit your evaluation.
+                                Please review your responses carefully before submitting.
+                            </p>
+                        </div>
+                        <button type="button"
+                                onclick="showConfirmModal()"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Submit Evaluation
+                        </button>
+                    </div>
+                @else
+                    <div class="bg-white shadow-sm rounded-lg p-6">
                         <p class="text-sm text-gray-600">
-                            <strong>Important:</strong> Once submitted, you cannot edit your evaluation.
-                            Please review your responses carefully before submitting.
+                            You already submitted this evaluation. You can review your responses below; editing is disabled.
                         </p>
                     </div>
-                    <button type="button"
-                            onclick="showConfirmModal()"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Submit Evaluation
-                    </button>
-                </div>
+                @endif
             </form>
         </div>
     </div>
@@ -257,6 +276,12 @@
                         Are you sure you want to submit this evaluation? You can only evaluate this person once
                         for this academic period and cannot make changes after submission.
                     </p>
+                    <div class="text-left text-sm text-gray-700 mt-3 space-y-1" id="confirmationSummary">
+                        <p><strong>Part A Average:</strong> <span id="avgA">-</span></p>
+                        <p><strong>Part B Average:</strong> <span id="avgB">-</span></p>
+                        <p><strong>Part C Average:</strong> <span id="avgC">-</span></p>
+                        <p><strong>Overall Average:</strong> <span id="avgOverall">-</span></p>
+                    </div>
                 </div>
                 <div class="items-center px-4 py-3 space-y-2">
                     <button onclick="submitForm()"
@@ -273,12 +298,51 @@
     </div>
 
     <script>
+        const sectionAKeys = ['a1','a2','a3','a4','a5','a6'];
+        const sectionBKeys = ['b7','b8','b9','b10','b11','b12'];
+        const sectionCKeys = ['c12','c13','c14','c15'];
+
+        function computeAverages() {
+            const getValue = (name) => {
+                const selected = document.querySelector(`input[name=\"${name}\"]:checked`);
+                return selected ? Number(selected.value) : null;
+            };
+
+            const sumSection = (keys) => keys.reduce((sum, key) => {
+                const val = getValue(key);
+                return val ? sum + val : sum;
+            }, 0);
+
+            const countSection = (keys) => keys.filter((key) => getValue(key) !== null).length;
+
+            const sumA = sumSection(sectionAKeys);
+            const countA = countSection(sectionAKeys);
+            const sumB = sumSection(sectionBKeys);
+            const countB = countSection(sectionBKeys);
+            const sumC = sumSection(sectionCKeys);
+            const countC = countSection(sectionCKeys);
+
+            const avgA = countA ? (sumA / countA).toFixed(2) : '-';
+            const avgB = countB ? (sumB / countB).toFixed(2) : '-';
+            const avgC = countC ? (sumC / countC).toFixed(2) : '-';
+
+            const totalSum = sumA + sumB + sumC;
+            const totalCount = countA + countB + countC;
+            const avgOverall = totalCount ? (totalSum / totalCount).toFixed(2) : '-';
+
+            document.getElementById('avgA').textContent = avgA;
+            document.getElementById('avgB').textContent = avgB;
+            document.getElementById('avgC').textContent = avgC;
+            document.getElementById('avgOverall').textContent = avgOverall;
+        }
+
         function showConfirmModal() {
             const form = document.getElementById('evaluationForm');
             if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
+            computeAverages();
             document.getElementById('confirmModal').classList.remove('hidden');
         }
 

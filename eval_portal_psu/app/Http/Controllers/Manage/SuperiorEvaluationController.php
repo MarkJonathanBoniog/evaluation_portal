@@ -43,15 +43,13 @@ class SuperiorEvaluationController extends Controller
             ->where('evaluated_as', $evaluatedAs)
             ->first();
 
-        if ($existing) {
-            return redirect()->route($dashboardRoute)
-                ->with('error', 'You have already submitted an evaluation for this person for this academic period.');
-        }
-
         return view('manage.superior-evaluations.form', [
             'period'      => $period,
             'subjectUser' => $subject,
             'evaluatedAs' => $evaluatedAs,
+            'evaluation'  => $existing,
+            'isReadOnly'  => (bool) $existing,
+            'backRoute'   => $dashboardRoute,
         ]);
     }
 

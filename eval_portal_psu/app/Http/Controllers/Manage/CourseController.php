@@ -13,17 +13,28 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class CourseController extends Controller
 {
     // GET /manage/periods/{period}/programs/{program}/courses
-    public function index(AcademicPeriod $period, Program $program)
+    public function index(Request $request, AcademicPeriod $period, Program $program)
     {
-        $courses = $program->courses()
-        ->withCount(['sections as sections_count' => function ($q) use ($period, $program) {
-            $q->where('academic_period_id', $period->id)
-              ->where('program_id', $program->id);
-        }])
-        ->orderBy('course_code')
-        ->get();
+        $filters = [
+            'q' => trim((string) $request->get('q', '')),
+        ];
 
-        return view('manage.courses.index', compact('period', 'program', 'courses'));
+        $courses = $program->courses()
+            ->withCount(['sections as sections_count' => function ($q) use ($period, $program) {
+                $q->where('academic_period_id', $period->id)
+                  ->where('program_id', $program->id);
+            }])
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('course_code', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('course_name', 'like', '%' . $filters['q'] . '%');
+                });
+            })
+            ->orderBy('course_code')
+            ->paginate(40)
+            ->withQueryString();
+
+        return view('manage.courses.index', compact('period', 'program', 'courses', 'filters'));
     }
 
     // POST /manage/periods/{period}/programs/{program}/courses

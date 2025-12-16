@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
-            CED Dashboard – Evaluate Deans
+            CED Evaluation: Deans
         </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Oversee dean evaluations across your assigned colleges and periods. Track completion status and open pending evaluations directly from the tables below.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -13,6 +16,34 @@
                 </p>
             </div>
         @endif
+
+        <form method="GET" class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4 flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap">
+            <div class="w-full lg:flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ $filters['q'] ?? '' }}"
+                    placeholder="Search dean or college"
+                    class="mt-1 w-full rounded border-gray-300"
+                >
+            </div>
+            <div class="w-full lg:w-64">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">College</label>
+                <select name="college_id" class="mt-1 w-full rounded border-gray-300">
+                    <option value="">All colleges</option>
+                    @foreach($colleges as $college)
+                        <option value="{{ $college->id }}" @selected((string)$college->id === (string)($filters['college_id'] ?? ''))>
+                            {{ $college->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                <a href="{{ route('dashboard.ced') }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+            </div>
+        </form>
 
         @foreach($periods as $period)
             @php

@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Dashboard') }}
+            {{ __('Evaluation Page') }}
         </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Access your evaluation tools and shortcuts tailored to your role. Follow the links below to review or complete any pending evaluations.
+        </p>
     </x-slot>
 
     <div class="py-12">

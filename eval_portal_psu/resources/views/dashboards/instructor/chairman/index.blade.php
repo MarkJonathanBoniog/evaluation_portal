@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
-            Chairman Dashboard – Superior Evaluations
+            Chairman Instructor Evaluations
         </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Evaluate instructors and the dean within your department’s academic periods. Track which evaluations are pending and open forms directly from the lists below.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -13,6 +16,23 @@
                 </p>
             </div>
         @endif
+
+        <form method="GET" class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4 flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap">
+            <div class="w-full lg:flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ $filters['q'] ?? '' }}"
+                    placeholder="Search instructor name or UID"
+                    class="mt-1 w-full rounded border-gray-300"
+                >
+            </div>
+            <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                <a href="{{ route('dashboard.chairman') }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+            </div>
+        </form>
 
         @foreach($periods as $period)
             @php
@@ -85,9 +105,10 @@
                                                     Evaluate
                                                 </a>
                                             @else
-                                                <span class="text-xs text-slate-500">
-                                                    Already evaluated
-                                                </span>
+                                                <a href="{{ route('manage.superior-evaluations.edit', [$period, $inst->instructor_id]) }}"
+                                                   class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300">
+                                                    View
+                                                </a>
                                             @endif
                                         </td>
                                     </tr>
@@ -138,9 +159,10 @@
                                                 Evaluate
                                             </a>
                                         @else
-                                            <span class="text-xs text-slate-500">
-                                                Already evaluated
-                                            </span>
+                                            <a href="{{ route('manage.superior-evaluations.edit', [$period, $dean->dean_id]) }}"
+                                               class="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300">
+                                                View
+                                            </a>
                                         @endif
                                     </td>
                                 </tr>

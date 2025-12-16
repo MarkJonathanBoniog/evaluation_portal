@@ -11,29 +11,72 @@ use Illuminate\Validation\Rule;
 
 class AcademicPeriodController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $filters = [
+            'q'            => trim((string) $request->get('q', '')),
+            'college_id'   => $request->get('college_id'),
+            'department_id'=> $request->get('department_id'),
+        ];
 
         $query = AcademicPeriod::with(['college', 'department', 'creator'])
             ->orderByDesc('year_start')
             ->orderByDesc('term');
 
+        $colleges = collect();
+        $departments = collect();
+
         if ($user->hasRole('ced') || $user->hasRole('systemadmin')) {
-            // see everything
+            $colleges = College::orderBy('name')->get(['id', 'name']);
+            $departments = Department::orderBy('name')->get(['id', 'name', 'college_id']);
         } elseif ($user->hasRole('dean')) {
-            $collegeIds = $user->deanColleges->pluck('id');
-            $query->whereIn('college_id', $collegeIds);
+            $colleges = $user->deanColleges()
+                ->select('colleges.*')
+                ->orderBy('colleges.name')
+                ->get();
+
+            $departments = Department::whereIn('college_id', $colleges->pluck('id'))
+                ->orderBy('name')
+                ->get(['id', 'name', 'college_id']);
+
+            $query->whereIn('college_id', $colleges->pluck('id'));
         } elseif ($user->hasRole('chairman')) {
-            $deptIds = $user->chairedDepartments->pluck('id');
-            $query->whereIn('department_id', $deptIds);
+            $departments = $user->chairedDepartments()
+                ->select('departments.*')
+                ->orderBy('departments.name')
+                ->get();
+
+            $colleges = College::whereIn('id', $departments->pluck('college_id'))
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
+            $query->whereIn('department_id', $departments->pluck('id'));
         } else {
             abort(403, 'You are not allowed to view academic periods.');
         }
 
-        $periods = $query->paginate(10);
+        if ($filters['q'] !== '') {
+            $query->where(function ($q) use ($filters) {
+                $q->whereHas('college', function ($c) use ($filters) {
+                    $c->where('name', 'like', '%' . $filters['q'] . '%');
+                })->orWhereHas('department', function ($d) use ($filters) {
+                    $d->where('name', 'like', '%' . $filters['q'] . '%');
+                });
+            });
+        }
 
-        return view('manage.periods.index', compact('periods'));
+        if ($filters['college_id']) {
+            $query->where('college_id', $filters['college_id']);
+        }
+
+        if ($filters['department_id']) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
+        $periods = $query->paginate(40)->withQueryString();
+
+        return view('manage.periods.index', compact('periods', 'colleges', 'departments', 'filters'));
     }
 
     public function create()

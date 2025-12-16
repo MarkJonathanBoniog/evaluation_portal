@@ -5,32 +5,56 @@ namespace App\Http\Controllers\Dashboards;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicPeriod;
 use App\Models\SuperiorEvaluation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DeanDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $filters = [
+            'q'          => trim((string) $request->get('q', '')),
+            'college_id' => $request->get('college_id'),
+        ];
 
         // 1) Colleges this dean is assigned to
-        $collegeIds = $user->deanColleges()
-            ->pluck('colleges.id');
+        $collegeOptions = $user->deanColleges()
+            ->select('colleges.*')
+            ->orderBy('colleges.name')
+            ->get();
+        $collegeIds = $collegeOptions->pluck('id');
+
+        if ($filters['college_id']) {
+            $collegeIds = $collegeIds->filter(fn ($id) => (int) $id === (int) $filters['college_id']);
+        }
 
         if ($collegeIds->isEmpty()) {
             return view('dashboards.instructor.dean.index', [
                 'periods'          => collect(),
                 'chairsByCollege'  => collect(),
                 'evaluationStatus' => collect(),
+                'filters'          => $filters,
+                'colleges'         => $collegeOptions,
             ]);
         }
 
         // 2) Academic periods in those colleges
         $periods = AcademicPeriod::with(['college', 'department'])
             ->whereIn('college_id', $collegeIds)
+            ->when($filters['college_id'], fn ($q) => $q->where('college_id', $filters['college_id']))
             ->orderByDesc('year_start')
             ->orderByDesc('term')
-            ->get();
+            ->get()
+            // Guard against accidental duplicate period rows per college/term/year
+            ->unique(fn ($p) => $p->college_id . '-' . $p->year_start . '-' . $p->year_end . '-' . $p->term)
+            ->values();
+
+        // Keep only the latest period per filters
+        $latestPeriod = $periods->first();
+        $periods = $latestPeriod ? collect([$latestPeriod]) : collect();
+
+        $periodIds = $periods->pluck('id');
 
         $periodIds = $periods->pluck('id');
 
@@ -39,6 +63,13 @@ class DeanDashboardController extends Controller
             ->join('users', 'users.id', '=', 'chairman_assignments.user_id')
             ->join('departments', 'departments.id', '=', 'chairman_assignments.department_id')
             ->whereIn('departments.college_id', $collegeIds)
+            ->when($filters['college_id'], fn ($q) => $q->where('departments.college_id', $filters['college_id']))
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('users.name', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('departments.name', 'like', '%' . $filters['q'] . '%');
+                });
+            })
             ->select(
                 'chairman_assignments.user_id as chairman_id',
                 'users.name as chairman_name',
@@ -67,6 +98,8 @@ class DeanDashboardController extends Controller
             'periods'          => $periods,
             'chairsByCollege'  => $chairs,
             'evaluationStatus' => $evaluationStatus,
+            'filters'          => $filters,
+            'colleges'         => $collegeOptions,
         ]);
     }
 }

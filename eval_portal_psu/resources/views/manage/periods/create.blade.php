@@ -3,6 +3,9 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">
             Create Academic Period
         </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Set up a new academic period with its assigned college, department, year span, and term. Align these details with your academic calendar so programs, courses, and evaluations stay in sync.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-3xl mx-auto sm:px-6 lg:px-8">

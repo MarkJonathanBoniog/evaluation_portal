@@ -11,6 +11,7 @@ class InstructorProfile extends Model
         'user_id',
         'instructor_uid',
         'department_id',
+        'faculty_rank',
     ];
 
     public function user(): BelongsTo

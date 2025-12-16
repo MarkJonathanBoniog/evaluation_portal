@@ -255,9 +255,11 @@ class DemoDataSeeder extends Seeder
 
                     // 3 students per section
                     for ($st = 1; $st <= 3; $st++) {
+                        $studentCode = '25UR' . str_pad($globalStudentCounter, 4, '0', STR_PAD_LEFT);
+
                         $studentUser = User::factory()->create([
                             'name'     => $dept->name . " Student {$globalStudentCounter}",
-                            'email'    => Str::slug($dept->name . "-student-{$globalStudentCounter}") . '@example.com',
+                            'email'    => $studentCode . '@psu.edu.ph',
                             'password' => bcrypt('password'),
                         ]);
                         $studentUser->assignRole('student');
@@ -265,8 +267,9 @@ class DemoDataSeeder extends Seeder
                         // Student profile
                         StudentProfile::create([
                             'user_id'        => $studentUser->id,
-                            'student_number' => '2025-' . str_pad($globalStudentCounter, 4, '0', STR_PAD_LEFT),
+                            'student_number' => $studentCode,
                             'program_id'     => $program->id,
+                            'department_id'  => $dept->id,
                         ]);
 
                         // Enroll student into section (section_student pivot)

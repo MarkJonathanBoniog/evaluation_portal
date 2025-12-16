@@ -8,6 +8,9 @@
             'Class Roster' => '#',
         ]" />
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">Class Roster</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Manage students enrolled in this section and track evaluation status. Add or remove students and keep roster data synced for accurate reporting.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -58,7 +61,7 @@
 
     <div class="w-full sm:w-auto flex-1">
         <label for="student_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Search Student
+            Manual Adding of Students
         </label>
 
         <div
@@ -115,6 +118,23 @@
 
         {{-- Roster table --}}
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <form method="GET" class="flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap mb-4">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ $filters['q'] ?? '' }}"
+                        placeholder="Search student name, email, or number"
+                        class="mt-1 w-full rounded border-gray-300"
+                    >
+                </div>
+                <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                    <a href="{{ route('manage.roster.index', [$period, $program, $course, $section]) }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+                </div>
+            </form>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="text-xs uppercase text-gray-500">
@@ -157,11 +177,20 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="py-6 text-center text-gray-500">No students yet.</td></tr>
+                        <tr>
+                            <td colspan="6" class="py-6 text-center text-gray-500">
+                                @if($filters['q'] ?? false)
+                                    No students match your search.
+                                @else
+                                    No students yet.
+                                @endif
+                            </td>
+                        </tr>
                     @endforelse
                     </tbody>
                 </table>
             </div>
+            <x-table-footer :paginator="$students" />
         </div>
 
         {{-- Upload Roster CSV Modal --}}

@@ -6,13 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\AcademicPeriod;
 use App\Models\Section;
 use App\Models\SuperiorEvaluation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ChairmanDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $filters = [
+            'q' => trim((string) $request->get('q', '')),
+        ];
 
         // 1) Departments that this user chairs
         $departmentIds = $user->chairedDepartments()
@@ -33,6 +37,10 @@ class ChairmanDashboardController extends Controller
             ->orderByDesc('year_start')
             ->orderByDesc('term')
             ->get();
+
+        // Keep only the latest period
+        $latestPeriod = $periods->first();
+        $periods = $latestPeriod ? collect([$latestPeriod]) : collect();
 
         $periodIds = $periods->pluck('id');
 
@@ -62,6 +70,9 @@ class ChairmanDashboardController extends Controller
                     'users.name as dean_name',
                     'dean_assignments.college_id'
                 )
+                ->when($filters['q'] !== '', function ($q) use ($filters) {
+                    $q->where('users.name', 'like', '%' . $filters['q'] . '%');
+                })
                 ->orderBy('users.name')
                 ->get();
 
@@ -81,6 +92,12 @@ class ChairmanDashboardController extends Controller
             ->where('users.id', '!=', $user->id) // chairman must not evaluate himself as instructor
             ->when($deanIds->isNotEmpty(), function ($q) use ($deanIds) {
                 $q->whereNotIn('users.id', $deanIds); // EXCLUDE deans from instructor list
+            })
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('users.name', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('instructor_profiles.instructor_uid', 'like', '%' . $filters['q'] . '%');
+                });
             })
             ->select(
                 'sections.academic_period_id',
@@ -115,6 +132,7 @@ class ChairmanDashboardController extends Controller
             'instructorsByPeriod' => $instructorsByPeriod,
             'evaluationStatus'    => $evaluationStatus,
             'deansByCollege'      => $deansByCollege,
+            'filters'             => $filters,
         ]);
     }
 }

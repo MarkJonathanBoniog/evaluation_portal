@@ -31,14 +31,15 @@ class StudentEvaluationController extends Controller
             ->where('evaluated_as', 'student')
             ->first();
 
-        if ($existingEvaluation) {
-            return redirect()->back()->with('error', 'You have already submitted an evaluation for this instructor.');
-        }
-
         // Get instructor information from the section
         $instructor = $sectionStudent->section->instructor ?? null;
 
-        return view('student.evaluation.form', compact('sectionStudent', 'instructor'));
+        return view('student.evaluation.form', [
+            'sectionStudent'     => $sectionStudent,
+            'instructor'         => $instructor,
+            'evaluationRecord'   => $existingEvaluation,
+            'isReadOnly'         => (bool) $existingEvaluation,
+        ]);
     }
 
     /**

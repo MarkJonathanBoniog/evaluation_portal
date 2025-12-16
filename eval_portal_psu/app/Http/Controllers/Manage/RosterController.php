@@ -15,16 +15,30 @@ use Illuminate\Support\Str;
 
 class RosterController extends Controller
 {
-    public function index(AcademicPeriod $period, Program $program, Course $course, Section $section)
+    public function index(Request $request, AcademicPeriod $period, Program $program, Course $course, Section $section)
     {
+        $filters = [
+            'q' => trim((string) $request->get('q', '')),
+        ];
+
+        // Collect current IDs to exclude from candidate list
+        $enrolledIds = $section->students()->pluck('users.id');
+
         // Already-enrolled students (via relation), include pivot (evaluated_at)
         $students = $section->students()
             ->with('studentProfile:id,user_id,student_number') // if you have StudentProfile relation on User
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('users.name', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('users.email', 'like', '%' . $filters['q'] . '%')
+                        ->orWhereHas('studentProfile', function ($sp) use ($filters) {
+                            $sp->where('student_number', 'like', '%' . $filters['q'] . '%');
+                        });
+                });
+            })
             ->orderBy('users.name')
-            ->get();
-
-        // Collect current IDs to exclude from candidate list
-        $enrolledIds = $students->pluck('id');
+            ->paginate(40)
+            ->withQueryString();
 
         // Candidates = all students not yet in this section
         $candidates = User::role('student')
@@ -33,7 +47,7 @@ class RosterController extends Controller
             ->orderBy('name')
             ->get(['id','name']); // student number via relation
 
-        return view('manage.roster.index', compact('period','program','course','section','students','candidates'));
+        return view('manage.roster.index', compact('period','program','course','section','students','candidates','filters'));
     }
 
     public function store(Request $request, AcademicPeriod $period, Program $program, Course $course, Section $section)

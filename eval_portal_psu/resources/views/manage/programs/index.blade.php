@@ -7,6 +7,9 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Programs & Majors for Period') }}
         </h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Manage programs and majors associated with this academic period and department. Add new offerings or adjust existing ones so downstream courses stay accurate.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -62,6 +65,23 @@
         </div>
 
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <form method="GET" class="flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap mb-4">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ $filters['q'] ?? '' }}"
+                        placeholder="Search program or major"
+                        class="mt-1 w-full rounded border-gray-300"
+                    >
+                </div>
+                <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                    <a href="{{ route('manage.programs.index', $period) }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+                </div>
+            </form>
+
             <table class="w-full text-sm text-left">
                 <thead class="text-xs uppercase text-gray-500">
                     <tr>
@@ -88,10 +108,19 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="3" class="py-6 text-center text-gray-500">No programs yet.</td></tr>
+                        <tr>
+                            <td colspan="4" class="py-6 text-center text-gray-500">
+                                @if($filters['q'] ?? false)
+                                    No programs match your search.
+                                @else
+                                    No programs yet.
+                                @endif
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
+            <x-table-footer :paginator="$programs" />
         </div>
     </div>
 </x-app-layout>

@@ -6,6 +6,9 @@
             'Courses' => '#'
         ]" />
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200">Courses</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Maintain the course list for this program and academic period. Add, edit, or sync courses so sections and rosters stay consistent.
+        </p>
     </x-slot>
 
     <div class="py-6 max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -51,6 +54,23 @@
 
         {{-- Courses Table --}}
         <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+            <form method="GET" class="flex flex-col gap-3 sm:flex-col lg:flex-row lg:items-end lg:flex-nowrap mb-4">
+                <div class="w-full lg:flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ $filters['q'] ?? '' }}"
+                        placeholder="Search course code or name"
+                        class="mt-1 w-full rounded border-gray-300"
+                    >
+                </div>
+                <div class="w-full lg:w-auto flex items-end gap-2 justify-end lg:justify-start">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Filter</button>
+                    <a href="{{ route('manage.courses.index', [$period, $program]) }}" class="px-3 py-2 text-sm text-gray-700 border rounded hover:bg-gray-50">Reset</a>
+                </div>
+            </form>
+
             @if($courses->count())
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
@@ -84,9 +104,14 @@
                         </tbody>
                     </table>
                 </div>
+                <x-table-footer :paginator="$courses" />
             @else
                 <div class="text-center text-gray-500 py-12">
-                    <p class="mt-2">No courses yet. You can add one manually or upload via CSV.</p>
+                    @if($filters['q'] ?? false)
+                        <p class="mt-2">No courses match your search.</p>
+                    @else
+                        <p class="mt-2">No courses yet. You can add one manually or upload via CSV.</p>
+                    @endif
                 </div>
             @endif
         </div>

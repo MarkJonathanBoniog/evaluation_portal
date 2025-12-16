@@ -17,20 +17,37 @@ use Illuminate\Support\Str;
 class SectionController extends Controller
 {
     // GET /manage/periods/{period}/programs/{program}/courses/{course}/sections
-    public function index(AcademicPeriod $period, Program $program, Course $course)
+    public function index(Request $request, AcademicPeriod $period, Program $program, Course $course)
     {
+        $filters = [
+            'q' => trim((string) $request->get('q', '')),
+        ];
+
         $sections = Section::with('instructor.instructorProfile')
             ->where('academic_period_id', $period->id)
             ->where('program_id', $program->id)
             ->where('course_id', $course->id)
+            ->when($filters['q'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('section_label', 'like', '%' . $filters['q'] . '%')
+                        ->orWhereHas('instructor', function ($iq) use ($filters) {
+                            $iq->where('name', 'like', '%' . $filters['q'] . '%')
+                                ->orWhere('email', 'like', '%' . $filters['q'] . '%');
+                        })
+                        ->orWhereHas('instructor.instructorProfile', function ($pq) use ($filters) {
+                            $pq->where('instructor_uid', 'like', '%' . $filters['q'] . '%');
+                        });
+                });
+            })
             ->orderBy('section_label')
-            ->get();
+            ->paginate(40)
+            ->withQueryString();
 
         $instructors = User::role('instructor')
             ->orderBy('name')
             ->get(['id','name']);
 
-        return view('manage.sections.index', compact('period','program','course','sections','instructors'));
+        return view('manage.sections.index', compact('period','program','course','sections','instructors','filters'));
     }
 
     // POST /manage/periods/{period}/programs/{program}/courses/{course}/sections
