@@ -1,9 +1,9 @@
 @php
-    /** @var \App\Models\User|null $user */
-    $user = auth()->user();
-    $isGuest = ! $user;
-    $fullName = $user?->name ?? 'Guest';
-    $roleName = $user?->getRoleNames()->first() ?? 'guest';
+/** @var \App\Models\User|null $user */
+$user = auth()->user();
+$isGuest = ! $user;
+$fullName = $user?->name ?? 'Guest';
+$roleName = $user?->getRoleNames()->first() ?? 'guest';
 @endphp
 
 <header
@@ -23,9 +23,7 @@
             </button>
 
             <div class="flex items-center gap-2">
-                <div class="h-10 w-10 rounded-full bg-indigo-600 text-white grid place-items-center font-semibold">
-                    PSU
-                </div>
+                <img src="{{ asset('psu_logo.png') }}" alt="PSU Logo" class="h-10 w-10 rounded-full bg-indigo-600 p-1" />
                 <div class="leading-tight">
                     <div class="text-sm font-semibold text-gray-900">Pangasinan State University</div>
                     <div class="text-xs text-gray-500">Evaluation Portal</div>
